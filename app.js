@@ -33,6 +33,80 @@ const User = mongoose.model("UserInfo");
 const Expense = mongoose.model("Expenses");
 const Images = mongoose.model("ImageDetails");
 
+app.get("/getBarChartData", async (req, res) => {
+  const { email } = req.params;
+
+  const pipeline = [
+    { $match: { userId: email } },
+    {
+      $addFields: {
+        month: { $month: { $toDate: "$date" } },
+      },
+    },
+    {
+      $group: {
+        _id: "$month",
+        totalAmount: { $sum: "$amount" },
+      },
+    },
+  ];
+  const result = await Expense.aggregate(pipeline);
+
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "July",
+    "Aug",
+    "Sept",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const data = months.map((month, index) => {
+    const monthData = result.find((item) => item._id === index + 1);
+    return { name: month, value: monthData ? monthData.total : 0 };
+  });
+
+  return res.send(data);
+});
+
+app.get("/getPieChartData", async (req, res) => {
+  const { email } = req.params;
+});
+
+app.get("/getCategoriesSpending", async (req, res) => {
+  const { email } = req.params;
+  Expense.aggregate([
+    // Match expenses for specific user
+    {
+      $match: {
+        userId: "kia@gmail.com",
+      },
+    },
+    // Group by category and sum amounts
+    {
+      $group: {
+        _id: "$category",
+        totalAmount: { $sum: "$amount" },
+      },
+    },
+    // Project the desired output fields
+    {
+      $project: {
+        id: 1,
+        category: "$_id",
+        amount: "$totalAmount",
+      },
+    },
+  ]).then((response) => {
+    return res.send(response);
+  });
+});
+
 app.get("/getTodayExpenses", async (req, res) => {
   const { email } = req.params;
 
