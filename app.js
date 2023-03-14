@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
+const { DateTime } = require("luxon");
 
 const app = express();
 app.use(cors());
@@ -12,7 +13,6 @@ app.use(express.urlencoded({ extended: false }));
 
 const jwt = require("jsonwebtoken");
 var nodemailer = require("nodemailer");
-const { response } = require("express");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const mongoUrl = process.env.MONGO_URL;
@@ -56,10 +56,9 @@ app.get("/getTodayExpenses", async (req, res) => {
 
 app.post("/deleteExpense", async (req, res) => {
   const { id } = req.body;
-  console.log(id);
   const filter = { _id: new ObjectId(id) };
   const result = await Expense.deleteOne(filter);
-  if (result.ok) {
+  if (result.deletedCount > 0) {
     return res.send("Deleted Successfully");
   } else {
     return res.send("Error Encountered While Deleting");
@@ -78,7 +77,36 @@ app.get("/getPreviousExpenses", async (req, res) => {
     email: email,
     date: { $lt: startOfToday },
   };
-  Expense.find(filter).then((result) => {
+  const pipeline = [
+    { $match: filter },
+    {
+      $group: {
+        _id: {
+          year: { $year: "$date" },
+          month: { $month: "$date" },
+          day: { $dayOfMonth: "$date" },
+        },
+        expenses: { $push: "$$ROOT" },
+      },
+    },
+    {
+      $project: {
+        _id: {
+          _date: {
+            $dateFromParts: {
+              year: "$_id.year",
+              month: "$_id.month",
+              day: "$_id.day",
+            },
+          },
+        },
+        expenses: 1,
+      },
+    },
+    { $sort: { "_id._date": -1 } },
+  ];
+
+  Expense.aggregate(pipeline).then((result) => {
     return res.send(result);
   });
 });
