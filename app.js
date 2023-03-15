@@ -4,7 +4,91 @@ const mongoose = require("mongoose");
 const { ObjectId } = mongoose.Types;
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
-const { DateTime } = require("luxon");
+const brain = require("brain.js");
+
+function generateMoneySavingTip(expenses, monthlySalary) {
+  const categories = ["Food and Drinks", "Groceries", "Rent or Mortgage"];
+
+  // Calculate the total amount spent on each category
+  const categoryAmounts = {};
+  categories.forEach((category) => (categoryAmounts[category] = 0));
+  expenses.forEach((expense) => {
+    const category = expense.category;
+    const amount = expense.amount;
+    categoryAmounts[category] += amount;
+  });
+
+  // Calculate the weightage of each category based on the total amount spent and monthly salary
+  const categoryWeightages = {};
+  categories.forEach((category) => {
+    const amountSpent = categoryAmounts[category];
+    categoryWeightages[category] = amountSpent / monthlySalary;
+  });
+
+  // Train a neural network to predict the weightage of each category
+  const net = new brain.NeuralNetwork({
+    inputSize: categories.length,
+  });
+  const trainingData = categories.map((category) => ({
+    input: [categoryWeightages[category], 0, 0],
+    output: [1],
+  }));
+  net.train(trainingData);
+
+  // Calculate the final weightage of each category based on the neural network prediction
+  const prediction = net.run(Object.values(categoryWeightages));
+  const finalWeightages = categories.map((category, i) => ({
+    category,
+    weightage: prediction[i],
+  }));
+
+  const tips = finalWeightages.map(({ category, weightage }) => {
+    const amountSpent = categoryAmounts[category];
+    if (isNaN(amountSpent)) {
+      return `We couldn't find any expenses for ${category}. Consider adding some transactions to better track your spending.`;
+    }
+    const percentOfTotalExpenses = (amountSpent / monthlySalary) * 100;
+    if (isNaN(amountSpent) || isNaN(percentOfTotalExpenses)) {
+      return `We couldn't find any expenses for ${category}. Consider adding some transactions to better track your spending.`;
+    }
+    if (weightage > 0.5) {
+      return `You spent very little on ${category} (${percentOfTotalExpenses.toFixed(
+        2
+      )}% of your monthly salary). Consider spending a bit more on ${category} to enjoy life more.`;
+    } else if (weightage > 0.25) {
+      return `You spent some money on ${category} (${percentOfTotalExpenses.toFixed(
+        2
+      )}% of your monthly salary). You may want to spend a bit more on ${category} to improve your quality of life.`;
+    } else if (weightage > 0.1) {
+      return `You didn't spend much on ${category} (${percentOfTotalExpenses.toFixed(
+        2
+      )}% of your monthly salary). Look for ways to spend a bit more on ${category} to enjoy life more.`;
+    } else if (weightage > 0.05) {
+      return `You spent a very small amount on ${category} (${percentOfTotalExpenses.toFixed(
+        2
+      )}% of your monthly salary). Make sure you're not sacrificing your quality of life by cutting back too much on ${category}.`;
+    } else if (percentOfTotalExpenses > 30) {
+      return `You spent a lot on ${category} (${percentOfTotalExpenses.toFixed(
+        2
+      )}% of your monthly salary). Consider reducing your spending on ${category} to save more.`;
+    } else if (percentOfTotalExpenses > 20) {
+      return `You spent quite a bit on ${category} (${percentOfTotalExpenses.toFixed(
+        2
+      )}% of your monthly salary). Consider reducing your spending on ${category} to save more.`;
+    } else if (percentOfTotalExpenses > 10) {
+      return `You spent some money on ${category} (${percentOfTotalExpenses.toFixed(
+        2
+      )}% of your monthly salary). Keep an eye on your spending in this category to make sure it doesn't get out of control.`;
+    } else {
+      return `You didn't spend anything on ${category} (${percentOfTotalExpenses.toFixed(
+        2
+      )}% of your monthly salary). Consider spending a bit on ${category} to keep things balanced. Keep up the good work!`;
+    }
+  });
+
+  // Return a random tip from the generated tips
+  return tips[Math.floor(Math.random() * tips.length)];
+}
 
 const app = express();
 app.use(cors());
@@ -33,13 +117,43 @@ const User = mongoose.model("UserInfo");
 const Expense = mongoose.model("Expenses");
 const Images = mongoose.model("ImageDetails");
 
+app.get("/getSavingTip", async (req, res) => {
+  const { email } = req.query;
+  const expenses = await Array.from(
+    await Expense.aggregate([
+      { $match: { userId: email } },
+      {
+        $group: {
+          _id: "$category",
+          totalAmount: { $sum: "$amount" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          expenseName: "$_id",
+          category: "$_id",
+          amount: "$totalAmount",
+        },
+      },
+    ])
+  );
+
+  const userIncome = await User.findOne({ email });
+
+  const tip = generateMoneySavingTip(expenses, userIncome);
+  console.log(tip);
+
+  return res.send(tip);
+});
+
 app.get("/getBarChartData", async (req, res) => {
-  const { email } = req.params;
+  const { email } = req.query;
 
   try {
     const result = await Expense.collection
       .aggregate([
-        { $match: { email: email } },
+        { $match: { userId: email } },
         { $match: {} },
         {
           $addFields: {
@@ -105,16 +219,34 @@ app.get("/getBarChartData", async (req, res) => {
 });
 
 app.get("/getPieChartData", async (req, res) => {
-  const { email } = req.params;
+  const { email } = req.query;
+  const result = await Expense.aggregate([
+    { $match: { userId: email } },
+    {
+      $group: {
+        _id: "$category",
+        totalAmount: { $sum: "$amount" },
+      },
+    },
+    {
+      $project: {
+        category: "$_id",
+        totalAmount: 1,
+        _id: 0,
+      },
+    },
+  ]).exec();
+
+  return res.send(result);
 });
 
 app.get("/getCategoriesSpending", async (req, res) => {
-  const { email } = req.params;
+  const { email } = req.query;
   Expense.aggregate([
     // Match expenses for specific user
     {
       $match: {
-        userId: "kia@gmail.com",
+        userId: email,
       },
     },
     // Group by category and sum amounts
@@ -138,8 +270,7 @@ app.get("/getCategoriesSpending", async (req, res) => {
 });
 
 app.get("/getTodayExpenses", async (req, res) => {
-  const { email } = req.params;
-
+  const { email } = req.query;
   const today = new Date();
   const startOfDay = new Date(
     today.getFullYear(),
@@ -148,7 +279,7 @@ app.get("/getTodayExpenses", async (req, res) => {
   );
   const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
   Expense.find({
-    email: email,
+    userId: email,
     date: {
       $gte: startOfDay,
       $lte: endOfDay,
@@ -170,7 +301,8 @@ app.post("/deleteExpense", async (req, res) => {
 });
 
 app.get("/getPreviousExpenses", async (req, res) => {
-  const { email } = req.params;
+  const { email } = req.query;
+
   const today = new Date();
   const startOfToday = new Date(
     today.getFullYear(),
@@ -178,7 +310,7 @@ app.get("/getPreviousExpenses", async (req, res) => {
     today.getDate()
   );
   const filter = {
-    email: email,
+    userId: email,
     date: { $lt: startOfToday },
   };
   const pipeline = [
@@ -242,7 +374,7 @@ app.post("/saveExpense", async (req, res) => {
 });
 
 app.post("/register", async (req, res) => {
-  const { fname, lname, email, password, userType } = req.body;
+  const { fname, lname, email, password, userType, income } = req.body;
 
   const encryptedPassword = await bcrypt.hash(password, 10);
   try {
@@ -257,6 +389,7 @@ app.post("/register", async (req, res) => {
       email,
       password: encryptedPassword,
       userType,
+      income,
     });
     res.send({ status: "ok" });
   } catch (error) {
@@ -350,7 +483,6 @@ app.post("/forgot-password", async (req, res) => {
 
 app.get("/reset-password/:id/:token", async (req, res) => {
   const { id, token } = req.params;
-  console.log(req.params);
   const oldUser = await User.findOne({ _id: id });
   if (!oldUser) {
     return res.json({ status: "User Not Exists!!" });
