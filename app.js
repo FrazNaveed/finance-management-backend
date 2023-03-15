@@ -139,6 +139,47 @@ const User = mongoose.model("UserInfo");
 const Expense = mongoose.model("Expenses");
 const Images = mongoose.model("ImageDetails");
 
+app.post("/updatePassword", async (req, res) => {
+  const { email, password } = req.body;
+  const encryptedPassword = await bcrypt.hash(password, 10);
+  try {
+    const updatedUser = await User.findOneAndUpdate(
+      { email },
+      { password: encryptedPassword },
+      { new: true }
+    );
+    console.log(updatedUser, "updatedUser");
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    return res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/updateIncome", async (req, res) => {
+  try {
+    const { email, income } = req.body;
+    console.log(req.body);
+    const user = await User.findOneAndUpdate(
+      { email },
+      { income },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found" });
+    }
+
+    return res.send({ message: "Updated successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ message: "Internal server error" });
+  }
+});
+
 app.get("/getSavingTip", async (req, res) => {
   const { email } = req.query;
   const currentMonth = new Date().toLocaleString("default", { month: "long" });
@@ -266,11 +307,14 @@ app.get("/getPieChartData", async (req, res) => {
 
 app.get("/getCategoriesSpending", async (req, res) => {
   const { email } = req.query;
+  const currentMonth = new Date().toLocaleString("default", { month: "long" });
+
   Expense.aggregate([
     // Match expenses for specific user
     {
       $match: {
         userId: email,
+        month: currentMonth,
       },
     },
     // Group by category and sum amounts
