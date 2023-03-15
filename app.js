@@ -45,15 +45,11 @@ function generateMoneySavingTip(expenses, monthlySalary) {
   const net = new brain.NeuralNetwork({
     inputSize: categories.length,
   });
-  const trainingData = categories.map((category, i) => {
-    const input = Array.from({ length: categories.length }, (_, j) =>
-      j === i ? categoryWeightages[category] : 0
-    );
-    return {
-      input,
-      output: [1],
-    };
-  });
+
+  const trainingData = categories.map((category) => ({
+    input: categoryWeightages[category],
+    output: [1],
+  }));
   net.train(trainingData);
 
   // Calculate the final weightage of each category based on the neural network prediction
@@ -65,10 +61,7 @@ function generateMoneySavingTip(expenses, monthlySalary) {
 
   const tips = finalWeightages.map(({ category, weightage }) => {
     const amountSpent = categoryAmounts[category];
-    const percentOfTotalExpenses = amountSpent
-      ? (amountSpent / monthlySalary) * 100
-      : 0;
-
+    const percentOfTotalExpenses = (amountSpent / monthlySalary) * 100;
     if (weightage > 0.5) {
       return `You spent very little on ${category} (${percentOfTotalExpenses.toFixed(
         2
@@ -88,7 +81,8 @@ function generateMoneySavingTip(expenses, monthlySalary) {
     } else if (
       category === "Hospital" ||
       category === "Rent or Mortgage" ||
-      category === "Insurance"
+      category === "Insurance" ||
+      category === "Utilities"
     ) {
       return `You spent a moderate amount on ${category} (${percentOfTotalExpenses.toFixed(
         2
@@ -147,29 +141,31 @@ const Images = mongoose.model("ImageDetails");
 
 app.get("/getSavingTip", async (req, res) => {
   const { email } = req.query;
-  const expenses = await Array.from(
-    await Expense.aggregate([
-      { $match: { userId: email } },
-      {
-        $group: {
-          _id: "$category",
-          totalAmount: { $sum: "$amount" },
-        },
+  const currentMonth = new Date().toLocaleString("default", { month: "long" });
+
+  const expenses = await Expense.aggregate([
+    {
+      $match: { userId: email, month: currentMonth },
+    },
+    {
+      $group: {
+        _id: "$category",
+        amount: { $sum: "$amount" },
       },
-      {
-        $project: {
-          _id: 0,
-          expenseName: "$_id",
-          category: "$_id",
-          amount: "$totalAmount",
-        },
+    },
+    {
+      $project: {
+        _id: 0,
+        category: "$_id",
+        amount: 1,
       },
-    ])
-  );
+    },
+  ]);
 
   const userIncome = await User.findOne({ email });
+  const income = userIncome.income;
 
-  const tip = generateMoneySavingTip(expenses, userIncome);
+  const tip = generateMoneySavingTip(expenses, income);
   console.log(tip);
 
   return res.send(tip);
