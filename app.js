@@ -7,7 +7,23 @@ const bcrypt = require("bcryptjs");
 const brain = require("brain.js");
 
 function generateMoneySavingTip(expenses, monthlySalary) {
-  const categories = ["Food and Drinks", "Groceries", "Rent or Mortgage"];
+  const categories = [
+    "Food and Drinks",
+    "Groceries",
+    "Rent or Mortgage",
+    "Utilities",
+    "Transportation",
+    "Personal care",
+    "Clothing and Accessories",
+    "Entertainment",
+    "Travel",
+    "Gifts and Donations",
+    "Medical and Health",
+    "Insurance",
+    "Education",
+    "Home Maintenance and Repairs",
+    "Miscellaneous",
+  ];
 
   // Calculate the total amount spent on each category
   const categoryAmounts = {};
@@ -29,10 +45,15 @@ function generateMoneySavingTip(expenses, monthlySalary) {
   const net = new brain.NeuralNetwork({
     inputSize: categories.length,
   });
-  const trainingData = categories.map((category) => ({
-    input: [categoryWeightages[category], 0, 0],
-    output: [1],
-  }));
+  const trainingData = categories.map((category, i) => {
+    const input = Array.from({ length: categories.length }, (_, j) =>
+      j === i ? categoryWeightages[category] : 0
+    );
+    return {
+      input,
+      output: [1],
+    };
+  });
   net.train(trainingData);
 
   // Calculate the final weightage of each category based on the neural network prediction
@@ -44,13 +65,10 @@ function generateMoneySavingTip(expenses, monthlySalary) {
 
   const tips = finalWeightages.map(({ category, weightage }) => {
     const amountSpent = categoryAmounts[category];
-    if (isNaN(amountSpent)) {
-      return `We couldn't find any expenses for ${category}. Consider adding some transactions to better track your spending.`;
-    }
-    const percentOfTotalExpenses = (amountSpent / monthlySalary) * 100;
-    if (isNaN(amountSpent) || isNaN(percentOfTotalExpenses)) {
-      return `We couldn't find any expenses for ${category}. Consider adding some transactions to better track your spending.`;
-    }
+    const percentOfTotalExpenses = amountSpent
+      ? (amountSpent / monthlySalary) * 100
+      : 0;
+
     if (weightage > 0.5) {
       return `You spent very little on ${category} (${percentOfTotalExpenses.toFixed(
         2
@@ -67,6 +85,14 @@ function generateMoneySavingTip(expenses, monthlySalary) {
       return `You spent a very small amount on ${category} (${percentOfTotalExpenses.toFixed(
         2
       )}% of your monthly salary). Make sure you're not sacrificing your quality of life by cutting back too much on ${category}.`;
+    } else if (
+      category === "Hospital" ||
+      category === "Rent or Mortgage" ||
+      category === "Insurance"
+    ) {
+      return `You spent a moderate amount on ${category} (${percentOfTotalExpenses.toFixed(
+        2
+      )}% of your monthly salary). Consider reviewing your expenses in this category to see if there are any opportunities to save money.`;
     } else if (percentOfTotalExpenses > 30) {
       return `You spent a lot on ${category} (${percentOfTotalExpenses.toFixed(
         2
@@ -82,7 +108,9 @@ function generateMoneySavingTip(expenses, monthlySalary) {
     } else {
       return `You didn't spend anything on ${category} (${percentOfTotalExpenses.toFixed(
         2
-      )}% of your monthly salary). Consider spending a bit on ${category} to keep things balanced. Keep up the good work!`;
+      )}% of your monthly salary). Consider spending a bit on ${category} (${percentOfTotalExpenses.toFixed(
+        2
+      )}% of your monthly salary). Keep up the good work!`;
     }
   });
 
