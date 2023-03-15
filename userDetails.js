@@ -21,6 +21,7 @@ const ExpensesSchema = new mongoose.Schema(
     time: String,
     amount: Number,
     userId: String,
+    month: String,
   },
   {
     collection: "Expenses",

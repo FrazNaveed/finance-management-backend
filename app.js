@@ -36,42 +36,72 @@ const Images = mongoose.model("ImageDetails");
 app.get("/getBarChartData", async (req, res) => {
   const { email } = req.params;
 
-  const pipeline = [
-    { $match: { userId: email } },
-    {
-      $addFields: {
-        month: { $month: { $toDate: "$date" } },
-      },
-    },
-    {
-      $group: {
-        _id: "$month",
-        totalAmount: { $sum: "$amount" },
-      },
-    },
-  ];
-  const result = await Expense.aggregate(pipeline);
+  try {
+    const result = await Expense.collection
+      .aggregate([
+        { $match: { email: email } },
+        { $match: {} },
+        {
+          $addFields: {
+            month_number: {
+              $switch: {
+                branches: [
+                  { case: { $eq: ["$month", "January"] }, then: 1 },
+                  { case: { $eq: ["$month", "February"] }, then: 2 },
+                  { case: { $eq: ["$month", "March"] }, then: 3 },
+                  { case: { $eq: ["$month", "April"] }, then: 4 },
+                  { case: { $eq: ["$month", "May"] }, then: 5 },
+                  { case: { $eq: ["$month", "June"] }, then: 6 },
+                  { case: { $eq: ["$month", "July"] }, then: 7 },
+                  { case: { $eq: ["$month", "August"] }, then: 8 },
+                  { case: { $eq: ["$month", "September"] }, then: 9 },
+                  { case: { $eq: ["$month", "October"] }, then: 10 },
+                  { case: { $eq: ["$month", "November"] }, then: 11 },
+                  { case: { $eq: ["$month", "December"] }, then: 12 },
+                ],
+              },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$month_number",
+            totalAmount: { $sum: "$amount" },
+          },
+        },
+        {
+          $addFields: {
+            month_name: {
+              $switch: {
+                branches: [
+                  { case: { $eq: ["$_id", 1] }, then: "Jan" },
+                  { case: { $eq: ["$_id", 2] }, then: "Feb" },
+                  { case: { $eq: ["$_id", 3] }, then: "Mar" },
+                  { case: { $eq: ["$_id", 4] }, then: "Apr" },
+                  { case: { $eq: ["$_id", 5] }, then: "May" },
+                  { case: { $eq: ["$_id", 6] }, then: "Jun" },
+                  { case: { $eq: ["$_id", 7] }, then: "Jul" },
+                  { case: { $eq: ["$_id", 8] }, then: "Aug" },
+                  { case: { $eq: ["$_id", 9] }, then: "Sept" },
+                  { case: { $eq: ["$_id", 10] }, then: "Oct" },
+                  { case: { $eq: ["$_id", 11] }, then: "Nov" },
+                  { case: { $eq: ["$_id", 12] }, then: "Dec" },
+                ],
+              },
+            },
+          },
+        },
+        {
+          $sort: { _id: 1 },
+        },
+      ])
+      .toArray();
 
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "July",
-    "Aug",
-    "Sept",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const data = months.map((month, index) => {
-    const monthData = result.find((item) => item._id === index + 1);
-    return { name: month, value: monthData ? monthData.total : 0 };
-  });
-
-  return res.send(data);
+    res.json(result);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server" });
+  }
 });
 
 app.get("/getPieChartData", async (req, res) => {
@@ -186,7 +216,7 @@ app.get("/getPreviousExpenses", async (req, res) => {
 });
 
 app.post("/saveExpense", async (req, res) => {
-  const { expenseName, category, date, time, amount, userId } = req.body;
+  const { expenseName, category, date, time, amount, userId, month } = req.body;
 
   console.log(req.body);
 
@@ -202,6 +232,7 @@ app.post("/saveExpense", async (req, res) => {
       time,
       amount,
       userId,
+      month,
     });
 
     return res.send({ status: "ok" });
