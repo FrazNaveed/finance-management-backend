@@ -1,8 +1,10 @@
 require('../models/ExpensesSchema')
 const mongoose = require('mongoose')
 const Expense = mongoose.model('Expenses')
+const express = require('express')
+const router = express.Router()
 
-const getCategoriesSpending = async (req, res) => {
+router.get('/', async (req, res) => {
     const { email } = req.query
     const currentMonth = new Date().toLocaleString('default', { month: 'long' })
 
@@ -32,5 +34,5 @@ const getCategoriesSpending = async (req, res) => {
     ]).then((response) => {
         return res.send(response)
     })
-}
-module.exports = getCategoriesSpending
+})
+module.exports = router

@@ -2,8 +2,10 @@ require('../models/ExpensesSchema')
 const mongoose = require('mongoose')
 const { ObjectId } = mongoose.Types
 const Expense = mongoose.model('Expenses')
+const express = require('express')
+const router = express.Router()
 
-const deleteExpense = async (req, res) => {
+router.post('/', async (req, res) => {
     const { id } = req.body
     const filter = { _id: new ObjectId(id) }
     const result = await Expense.deleteOne(filter)
@@ -12,5 +14,5 @@ const deleteExpense = async (req, res) => {
     } else {
         return res.send('Error Encountered While Deleting')
     }
-}
-module.exports = deleteExpense
+})
+module.exports = router

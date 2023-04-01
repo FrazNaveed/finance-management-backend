@@ -2,27 +2,7 @@
     "version": 2,
 
     "routes": [
-      { "src": "/updatePassword", "dest": "/index.js" },
-      { "src": "/updateIncome", "dest": "/index.js" },
-      { "src": "/getSavingTip", "dest": "/index.js" },
-      { "src": "/getBarChartData", "dest": "/index.js" },
-      { "src": "/getPieChartData", "dest": "/index.js" },
-      { "src": "/getCategoriesSpending", "dest": "/index.js" },
-      { "src": "/getTodayExpenses", "dest": "/index.js" },
-      { "src": "/deleteExpense", "dest": "/index.js" },
-      { "src": "/getPreviousExpenses", "dest": "/index.js" },
-      { "src": "/saveExpense", "dest": "/index.js" },
-      { "src": "/register", "dest": "/index.js" },
-      { "src": "/login-user", "dest": "/index.js" },
-      { "src": "/userData", "dest": "/index.js" },
-      { "src": "/forgot-password", "dest": "/index.js" },
-      { "src": "/reset-password/:id/:token", "dest": "/index.js" },
-      { "src": "/getAllUser", "dest": "/index.js" },
-      { "src": "/deleteUser", "dest": "/index.js" },
-      { "src": "/upload-image", "dest": "/index.js" },
-      { "src": "/get-image", "dest": "/index.js" },
-      { "src": "/paginatedUsers", "dest": "/index.js" },
-      { "src": "/(.*)", "dest": "/index.js" }
+      { "src": "/(.*)", "dest": "./index.js" }
     ]
   }
   

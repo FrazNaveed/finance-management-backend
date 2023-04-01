@@ -1,8 +1,10 @@
 require('../models/ImageDetailsSchema')
 const mongoose = require('mongoose')
 const Images = mongoose.model('ImageDetails')
+const express = require('express')
+const router = express.Router()
 
-const getImage = async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         await Images.find({}).then((data) => {
             res.send({ status: 'ok', data: data })
@@ -10,5 +12,5 @@ const getImage = async (req, res) => {
     } catch (error) {
         console.log(error)
     }
-}
-module.exports = getImage
+})
+module.exports = router

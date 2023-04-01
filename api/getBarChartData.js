@@ -1,9 +1,10 @@
 require('../models/ExpensesSchema')
 const mongoose = require('mongoose')
-
+const express = require('express')
+const router = express.Router()
 const Expense = mongoose.model('Expenses')
 
-const getBarChartData = async (req, res) => {
+router.get('/', async (req, res) => {
     const { email } = req.query
 
     try {
@@ -120,6 +121,6 @@ const getBarChartData = async (req, res) => {
         console.log(error)
         res.status(500).json({ error: 'Internal server' })
     }
-}
+})
 
-module.exports = getBarChartData
+module.exports = router

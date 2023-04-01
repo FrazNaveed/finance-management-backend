@@ -1,8 +1,10 @@
 const mongoose = require('mongoose')
 require('../models/UserDetailSchema')
 const User = mongoose.model('UserInfo')
+const express = require('express')
+const router = express.Router()
 
-const deleteUser = async (req, res) => {
+router.post('/', async (req, res) => {
     const { userid } = req.body
     try {
         User.deleteOne({ _id: userid }, function (err) {
@@ -12,5 +14,5 @@ const deleteUser = async (req, res) => {
     } catch (error) {
         console.log(error)
     }
-}
-module.exports = deleteUser
+})
+module.exports = router

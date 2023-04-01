@@ -4,8 +4,10 @@ require('../models/UserDetailSchema')
 const User = mongoose.model('UserInfo')
 const jwt = require('jsonwebtoken')
 const JWT_SECRET = process.env.JWT_SECRET
+const express = require('express')
+const router = express.Router()
 
-const loginUser = async (req, res) => {
+router.post('/', async (req, res) => {
     const { email, password } = req.body
     const user = await User.findOne({ email: email })
 
@@ -24,5 +26,5 @@ const loginUser = async (req, res) => {
         }
     }
     res.json({ status: 'error', error: 'Invalid Password' })
-}
-module.exports = loginUser
+})
+module.exports = router

@@ -1,8 +1,10 @@
 require('../models/ExpensesSchema')
 const mongoose = require('mongoose')
 const Expense = mongoose.model('Expenses')
+const express = require('express')
+const router = express.Router()
 
-const saveExpense = async (req, res) => {
+router.post('/', async (req, res) => {
     const { expenseName, category, date, time, amount, userId, month } =
         req.body
 
@@ -27,5 +29,5 @@ const saveExpense = async (req, res) => {
     } catch (e) {
         return res.send({ status: e })
     }
-}
-module.exports = saveExpense
+})
+module.exports = router

@@ -1,8 +1,10 @@
 const mongoose = require('mongoose')
 require('../models/UserDetailSchema')
 const User = mongoose.model('UserInfo')
+const express = require('express')
+const router = express.Router()
 
-const paginatedUsers = async (req, res) => {
+router.get('/', async (req, res) => {
     const allUser = await User.find({})
     const page = parseInt(req.query.page)
     const limit = parseInt(req.query.limit)
@@ -26,6 +28,6 @@ const paginatedUsers = async (req, res) => {
     }
     results.result = allUser.slice(startIndex, lastIndex)
     res.json(results)
-}
+})
 
-module.exports = paginatedUsers
+module.exports = router

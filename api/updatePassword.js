@@ -2,8 +2,10 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 require('../models/UserDetailSchema')
 const User = mongoose.model('UserInfo')
+const express = require('express')
+const router = express.Router()
 
-const updatePassword = async (req, res) => {
+router.post('/', async (req, res) => {
     const { email, password } = req.body
     const encryptedPassword = await bcrypt.hash(password, 10)
     try {
@@ -20,6 +22,6 @@ const updatePassword = async (req, res) => {
         console.error(error)
         return res.status(500).json({ error: 'Server error' })
     }
-}
+})
 
-module.exports = updatePassword
+module.exports = router

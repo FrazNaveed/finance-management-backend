@@ -2,10 +2,11 @@ const mongoose = require('mongoose')
 require('../models/UserDetailSchema')
 const User = mongoose.model('UserInfo')
 const jwt = require('jsonwebtoken')
-
+const express = require('express')
+const router = express.Router()
 const JWT_SECRET = process.env.JWT_SECRET
 
-const userData = async (req, res) => {
+router.post('/', async (req, res) => {
     const { token } = req.body
 
     try {
@@ -30,6 +31,6 @@ const userData = async (req, res) => {
     } catch (error) {
         console.log(error)
     }
-}
+})
 
-module.exports = userData
+module.exports = router

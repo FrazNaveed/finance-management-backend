@@ -1,8 +1,10 @@
 const mongoose = require('mongoose')
 require('../models/UserDetailSchema')
 const User = mongoose.model('UserInfo')
+const express = require('express')
+const router = express.Router()
 
-const updateIncome = async (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const { email, income } = req.body
         const user = await User.findOneAndUpdate(
@@ -20,6 +22,6 @@ const updateIncome = async (req, res) => {
         console.error(error)
         return res.status(500).send({ message: 'Internal server error' })
     }
-}
+})
 
-module.exports = updateIncome
+module.exports = router

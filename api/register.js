@@ -2,8 +2,10 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcryptjs')
 require('../models/UserDetailSchema')
 const User = mongoose.model('UserInfo')
+const express = require('express')
+const router = express.Router()
 
-const register = async (req, res) => {
+router.post('/', async (req, res) => {
     const { fname, lname, email, password, userType, income } = req.body
 
     const encryptedPassword = await bcrypt.hash(password, 10)
@@ -25,6 +27,6 @@ const register = async (req, res) => {
     } catch (error) {
         res.send({ status: 'error' })
     }
-}
+})
 
-module.exports = register
+module.exports = router

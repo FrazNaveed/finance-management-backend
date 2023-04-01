@@ -4,8 +4,10 @@ require('../models/ExpensesSchema')
 require('../models/UserDetailSchema')
 const Expense = mongoose.model('Expenses')
 const User = mongoose.model('UserInfo')
+const express = require('express')
+const router = express.Router()
 
-const getSavingTip = async (req, res) => {
+router.get('/', async (req, res) => {
     const { email } = req.query
     const currentMonth = new Date().toLocaleString('default', { month: 'long' })
 
@@ -34,5 +36,5 @@ const getSavingTip = async (req, res) => {
     const tip = generateMoneySavingTip(expenses, income)
 
     return res.send(tip)
-}
-module.exports = getSavingTip
+})
+module.exports = router

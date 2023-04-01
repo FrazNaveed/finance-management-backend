@@ -4,8 +4,10 @@ const User = mongoose.model('UserInfo')
 const jwt = require('jsonwebtoken')
 const JWT_SECRET = process.env.JWT_SECRET
 var nodemailer = require('nodemailer')
+const express = require('express')
+const router = express.Router()
 
-const forgotPassword = async (req, res) => {
+router.post('/', async (req, res) => {
     const { email } = req.body
     try {
         const oldUser = await User.findOne({ email })
@@ -47,6 +49,5 @@ const forgotPassword = async (req, res) => {
     } catch (error) {
         console.log(error)
     }
-}
-
-module.exports = forgotPassword
+})
+module.exports = router

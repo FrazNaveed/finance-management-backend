@@ -1,8 +1,10 @@
 require('../models/ExpensesSchema')
 const mongoose = require('mongoose')
 const Expense = mongoose.model('Expenses')
+const express = require('express')
+const router = express.Router()
 
-const getPieChartData = async (req, res) => {
+router.get('/', async (req, res) => {
     const { email } = req.query
     const result = await Expense.aggregate([
         { $match: { userId: email } },
@@ -22,5 +24,5 @@ const getPieChartData = async (req, res) => {
     ]).exec()
 
     return res.send(result)
-}
-module.exports = getPieChartData
+})
+module.exports = router

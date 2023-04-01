@@ -4,8 +4,10 @@ const User = mongoose.model('UserInfo')
 const jwt = require('jsonwebtoken')
 const JWT_SECRET = process.env.JWT_SECRET
 const bcrypt = require('bcryptjs')
+const express = require('express')
+const router = express.Router()
 
-const resetPassword = async (req, res) => {
+router.post('/', async (req, res) => {
     const { id, token } = req.params
     const { password } = req.body
 
@@ -33,6 +35,6 @@ const resetPassword = async (req, res) => {
         console.log(error)
         res.json({ status: 'Something Went Wrong' })
     }
-}
+})
 
-module.exports = resetPassword
+module.exports = router
