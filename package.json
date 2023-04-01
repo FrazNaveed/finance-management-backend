@@ -3,6 +3,9 @@
     "version": "1.0.0",
     "description": "",
     "main": "app.js",
+    "engines": {
+        "node": "14.17.3"
+      },
     "scripts": {
         "server": "nodemon ./index.js",
         "start": "node ./index.js",
